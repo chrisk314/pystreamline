@@ -1,3 +1,7 @@
+#include <unordered_map>
+#include <string>
+#include <vector>
+
 #include "kdtree.hpp"
 
 namespace PyStreamline
@@ -8,11 +12,24 @@ class StreamlineIntegrator
     int n_points, dim;
     double bounds[6];
     struct kdtree *tree;
+    std::unordered_map<std::string, int*> var_store_int;
+    std::unordered_map<std::string, double*> var_store_double;
 
   public:
     StreamlineIntegrator(double*, int, int);
-    int get_points_in_range(double, double, double, double, int*, int**, double**);
+
+    int get_n_points();
+    int get_dim();
     double* get_bounds();
+
+    int get_points_in_range(double, double, double, double, int*, int**, double**);
+
+    int add_int_array(std::string, int*);
+    std::vector<std::string> get_int_array_names();
+    int* get_int_array_with_name(std::string);
+    int add_double_array(std::string, double*);
+    std::vector<std::string> get_double_array_names();
+    double* get_double_array_with_name(std::string);
 };
 
 }
