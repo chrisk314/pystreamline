@@ -198,37 +198,6 @@ int StreamlineIntegrator::interpolate_vec_at_point(double *pos, double *vec)
 }
 
 
-int StreamlineIntegrator::add_int_array(std::string name, int *arr)
-{
-    if ( var_store_int.find(name) == var_store_int.end() )
-        var_store_int.insert({name, arr});
-    else
-        var_store_int[name] = arr;
-    return 0;
-}
-
-
-int* StreamlineIntegrator::get_int_array_with_name(std::string name)
-{
-    if ( var_store_int.find(name) == var_store_int.end() )
-    {
-        char message[100];
-        sprintf(message, "key: %s not in int store", name.c_str());
-        throw std::invalid_argument(message);
-    }
-    else
-    {
-        return var_store_int[name];
-    }
-}
-
-
-std::vector<std::string> StreamlineIntegrator::get_int_array_names()
-{
-    return extract_keys_from_unordered_map(var_store_int);
-}
-
-
 int StreamlineIntegrator::add_double_array(std::string name, double *arr)
 {
     if ( var_store_double.find(name) == var_store_double.end() )

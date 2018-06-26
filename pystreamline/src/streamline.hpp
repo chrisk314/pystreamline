@@ -13,7 +13,6 @@ class StreamlineIntegrator
     double bounds[6];
     struct kdtree *tree;
 
-    std::unordered_map<std::string, int*> var_store_int;
     std::unordered_map<std::string, double*> var_store_double;
 
     double interp_lscale = 0., neg_inv_interp_lscale_sq = 0.;
@@ -39,9 +38,6 @@ class StreamlineIntegrator
     int get_points_in_range(double, double, double, double, int*, int**, double**);
     int interpolate_vec_at_point(double*, double*);
 
-    int add_int_array(std::string, int*);
-    std::vector<std::string> get_int_array_names();
-    int* get_int_array_with_name(std::string);
     int add_double_array(std::string, double*);
     std::vector<std::string> get_double_array_names();
     double* get_double_array_with_name(std::string);

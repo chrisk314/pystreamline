@@ -26,41 +26,6 @@ class TestStreamlineIntegrator(TestCase):
             self.streamline_integrator.get_bounds()
         )
 
-    def test_StreamlineIntegrator_var_store_int(self):
-        # Tests ``arr1`` data can be set correctly
-        arr1 = npr.randint(0, 100, self.n_points, dtype=np.int32)
-        self.streamline_integrator.add_int_array('arr1', arr1)
-        np.testing.assert_allclose(
-            arr1, self.streamline_integrator.get_int_array_with_name('arr1')
-        )
-
-        # Tests ``arr1`` data can be overwritten correctly
-        arr1 = npr.randint(0, 100, self.n_points, dtype=np.int32)
-        self.streamline_integrator.add_int_array('arr1', arr1)
-        np.testing.assert_allclose(
-            arr1, self.streamline_integrator.get_int_array_with_name('arr1')
-        )
-
-        # Tests setting multiple data arrays at once
-        arrs = [
-            ('arr2', npr.randint(0, 100, self.n_points, dtype=np.int32)),
-            ('arr3', npr.randint(0, 100, self.n_points, dtype=np.int32))
-        ]
-        self.streamline_integrator.add_int_arrays(arrs)
-        np.testing.assert_allclose(
-            arrs[0][1], self.streamline_integrator.get_int_array_with_name('arr2')
-        )
-        np.testing.assert_allclose(
-            arrs[1][1], self.streamline_integrator.get_int_array_with_name('arr3')
-        )
-
-        # Tests array names are stored and recovered correctly
-        assert set(('arr1', 'arr2', 'arr3')) == set(self.streamline_integrator.int_array_names)
-
-        # Tests exception is raised when array name is not present
-        with self.assertRaises(ValueError):
-            self.streamline_integrator.get_int_array_with_name('arr4')
-
     def test_StreamlineIntegrator_var_store_double(self):
         """Tests that double arrays are passed correctly between Python and C++,
          and stored correctly.
@@ -79,9 +44,6 @@ class TestStreamlineIntegrator(TestCase):
             arr1, self.streamline_integrator.get_double_array_with_name('arr1')
         )
 
-        # TODO : running with this code causes segfault.
-        # -->
-        # Tests setting multiple data arrays at once
         arrs = [
             ('arr2', npr.random(self.n_points)),
             ('arr3', npr.random(self.n_points))
@@ -93,7 +55,6 @@ class TestStreamlineIntegrator(TestCase):
         np.testing.assert_allclose(
             arrs[1][1], self.streamline_integrator.get_double_array_with_name('arr3')
         )
-        # <--
 
         # Tests array names are stored and recovered correctly
         assert set(('arr1', 'arr2', 'arr3')) == set(self.streamline_integrator.double_array_names)

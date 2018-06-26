@@ -45,9 +45,6 @@ cdef extern from "src/streamline.hpp" namespace "PyStreamline":
         int set_interp_lscale(double);
         int get_points_in_range(double, double, double, double, int*, int**, double**);
         int interpolate_vec_at_point(double*, double*);
-        int add_int_array(string, int*);
-        int* get_int_array_with_name(string);
-        vector[string] get_int_array_names();
         int add_double_array(string, double*);
         double* get_double_array_with_name(string);
         vector[string] get_double_array_names();
@@ -88,29 +85,6 @@ cdef class _StreamlineIntegrator__wrapper:
     def get_bounds(self):
         cdef np.float64_t[:] view = <np.float64_t[:6]> self.thisptr.get_bounds()
         return np.asarray(view).reshape((3,2))
-
-    def add_int_array(self, name, np.ndarray[np.int32_t, ndim=1, mode='c'] arr):
-        cdef c_name = <string> name.encode('utf-8')
-        arr = np.ascontiguousarray(arr, dtype=np.int32)
-        self.thisptr.add_int_array(c_name, <int*> arr.data)
-
-    def add_int_arrays(self, arr_list):
-        for name, arr in arr_list:
-            self.add_int_array(name, arr)
-
-    @property
-    def int_array_names(self):
-        c_str_vector = self.thisptr.get_int_array_names()
-        return [b.decode('utf-8') for b in c_str_vector]
-
-    def get_int_array_with_name(self, name):
-        try:
-            assert name in self.int_array_names
-        except AssertionError:
-            raise ValueError('No int array with name: {:s}'.format(name))
-        cdef string c_name = <string> name.encode('utf-8')
-        cdef int* c_arr_ptr = <int*> self.thisptr.get_int_array_with_name(c_name)
-        return data_to_numpy_int_array_with_spec(c_arr_ptr, self.n_points)
 
     def add_double_array(self, name, np.ndarray[np.float64_t, ndim=1, mode='c'] arr):
         cdef c_name = <string> name.encode('utf-8')
