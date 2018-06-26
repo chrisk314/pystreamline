@@ -65,6 +65,12 @@ StreamlineIntegrator::StreamlineIntegrator(double *pos, int _n_points, int _dim)
 }
 
 
+StreamlineIntegrator::~StreamlineIntegrator()
+{
+    kd_free(tree);
+}
+
+
 int StreamlineIntegrator::get_n_points()
 {
     return n_points;

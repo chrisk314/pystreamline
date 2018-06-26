@@ -17,7 +17,8 @@ class StreamlineIntegrator
 
   public:
     StreamlineIntegrator(double*, int, int);
-
+    ~StreamlineIntegrator();
+    
     int get_n_points();
     int get_dim();
     double* get_bounds();
