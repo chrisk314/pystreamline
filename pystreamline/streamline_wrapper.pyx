@@ -39,7 +39,12 @@ cdef extern from "src/streamline.hpp" namespace "PyStreamline":
         StreamlineIntegrator(double*, int, int)
         int get_n_points();
         int get_dim();
-        int get_points_in_range(double, double, double, double, int*, int**, double**)
+        int set_vec_x(string);
+        int set_vec_y(string);
+        int set_vec_z(string);
+        int set_interp_lscale(double);
+        int get_points_in_range(double, double, double, double, int*, int**, double**);
+        int interpolate_vec_at_point(double*, double*);
         int add_int_array(string, int*);
         int* get_int_array_with_name(string);
         vector[string] get_int_array_names();
@@ -129,3 +134,41 @@ cdef class _StreamlineIntegrator__wrapper:
         cdef string c_name = <string> name.encode('utf-8')
         cdef double* c_arr_ptr = <double*> self.thisptr.get_double_array_with_name(c_name)
         return data_to_numpy_double_array_with_spec(c_arr_ptr, self.n_points)
+
+    def set_vec_x(self, name):
+        try:
+            assert name in self.double_array_names
+        except AssertionError:
+            raise ValueError('No double array with name: {:s}'.format(name))
+        cdef string c_name = <string> name.encode('utf-8')
+        self.thisptr.set_vec_x(c_name)
+
+    def set_vec_y(self, name):
+        try:
+            assert name in self.double_array_names
+        except AssertionError:
+            raise ValueError('No double array with name: {:s}'.format(name))
+        cdef string c_name = <string> name.encode('utf-8')
+        self.thisptr.set_vec_y(c_name)
+
+    def set_vec_z(self, name):
+        try:
+            assert name in self.double_array_names
+        except AssertionError:
+            raise ValueError('No double array with name: {:s}'.format(name))
+        cdef string c_name = <string> name.encode('utf-8')
+        self.thisptr.set_vec_z(c_name)
+
+    def set_vec_names(self, vec_x_name, vec_y_name, vec_z_name):
+        self.set_vec_x_name(vec_x_name)
+        self.set_vec_y_name(vec_y_name)
+        self.set_vec_z_name(vec_z_name)
+
+    def set_interp_lscale(self, lscale):
+        self.thisptr.set_interp_lscale(<double> lscale)
+
+    def _interp_vec_at_point(self, np.ndarray[np.float64_t, ndim=1, mode='c'] point):
+        point = np.ascontiguousarray(point, dtype=np.double)
+        cdef double c_vec[3]
+        self.thisptr.interpolate_vec_at_point(<double*> point.data, c_vec)
+        return np.array([x for x in c_vec])

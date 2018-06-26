@@ -1,6 +1,8 @@
 #include <cassert>
-#include <unordered_map>
+#include <cmath>
+#include <cstring>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "kdtree.hpp"
@@ -16,6 +18,10 @@ static double calc_dist_sq( double *a1, double *a2, int dims ) {
     return dist_sq;
 }
 
+static void delete_node_int_data(void* data)
+{
+    delete (int*) data;
+}
 
 template<typename TK, typename TV>
 std::vector<TK> extract_keys_from_unordered_map(std::unordered_map<TK, TV> const& input_map)
@@ -67,6 +73,7 @@ StreamlineIntegrator::StreamlineIntegrator(double *pos, int _n_points, int _dim)
 
 StreamlineIntegrator::~StreamlineIntegrator()
 {
+    tree->destr = delete_node_int_data;
     kd_free(tree);
 }
 
@@ -86,6 +93,44 @@ int StreamlineIntegrator::get_dim()
 double* StreamlineIntegrator::get_bounds()
 {
     return bounds;
+}
+
+
+int StreamlineIntegrator::set_vec(std::string name, std::string *vec_name_ref,
+  double **vec_ref, bool *vec_set_ref)
+{
+    if ( var_store_double.find(name) != var_store_double.end() ) {
+        *vec_name_ref = name;
+        *vec_ref = var_store_double[name];
+        *vec_set_ref = true;
+    }
+    else {
+        char message[100];
+        sprintf(message, "No array with name: %s", name.c_str());
+        throw std::invalid_argument(message);
+    }
+    return 0;
+}
+
+
+int StreamlineIntegrator::set_vec_x(std::string name)
+{
+    set_vec(name, &vec_x_name, &vec_x, &vec_x_set);
+    return 0;
+}
+
+
+int StreamlineIntegrator::set_vec_y(std::string name)
+{
+    set_vec(name, &vec_y_name, &vec_y, &vec_y_set);
+    return 0;
+}
+
+
+int StreamlineIntegrator::set_vec_z(std::string name)
+{
+    set_vec(name, &vec_z_name, &vec_z, &vec_z_set);
+    return 0;
 }
 
 
@@ -113,6 +158,46 @@ int StreamlineIntegrator::get_points_in_range(double x, double y, double z,
 }
 
 
+int StreamlineIntegrator::set_interp_lscale(double _interp_lscale)
+{
+    interp_lscale = _interp_lscale;
+    neg_inv_interp_lscale_sq = -1. / (interp_lscale * interp_lscale);
+    return 0;
+}
+
+
+int StreamlineIntegrator::interpolate_vec_at_point(double *pos, double *vec)
+{
+    int count, *idx;
+    double *dist_sq;
+
+    get_points_in_range(pos[0], pos[1], pos[2], interp_lscale, &count, &idx, &dist_sq);
+
+    memset(vec, 0, 3*sizeof(double));
+
+    double norm = 0.;
+    for (int i=0; i<count; i++)
+    {
+        int tmp_idx = idx[i];
+        double weight = exp(neg_inv_interp_lscale_sq * dist_sq[i]);
+        norm += weight;
+        vec[0] += vec_x[tmp_idx] * weight;
+        vec[1] += vec_y[tmp_idx] * weight;
+        vec[2] += vec_z[tmp_idx] * weight;
+    }
+    norm = count > 0 ? 1. / norm : 1.;
+    for (int i=0; i<3; i++)
+    {
+        vec[i] *= norm;
+    }
+
+    delete [] idx;
+    delete [] dist_sq;
+
+    return 0;
+}
+
+
 int StreamlineIntegrator::add_int_array(std::string name, int *arr)
 {
     if ( var_store_int.find(name) == var_store_int.end() )
@@ -127,7 +212,7 @@ int* StreamlineIntegrator::get_int_array_with_name(std::string name)
 {
     if ( var_store_int.find(name) == var_store_int.end() )
     {
-        char* message;
+        char message[100];
         sprintf(message, "key: %s not in int store", name.c_str());
         throw std::invalid_argument(message);
     }
@@ -158,7 +243,7 @@ double* StreamlineIntegrator::get_double_array_with_name(std::string name)
 {
     if ( var_store_double.find(name) == var_store_double.end() )
     {
-        char* message;
+        char message[100];
         sprintf(message, "key: %s not in double store", name.c_str());
         throw std::invalid_argument(message);
     }

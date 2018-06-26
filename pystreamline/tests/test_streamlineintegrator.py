@@ -62,6 +62,9 @@ class TestStreamlineIntegrator(TestCase):
             self.streamline_integrator.get_int_array_with_name('arr4')
 
     def test_StreamlineIntegrator_var_store_double(self):
+        """Tests that double arrays are passed correctly between Python and C++,
+         and stored correctly.
+        """
         # Tests ``arr1`` data can be set correctly
         arr1 = npr.random(self.n_points)
         self.streamline_integrator.add_double_array('arr1', arr1)
@@ -111,3 +114,51 @@ class TestStreamlineIntegrator(TestCase):
 
         assert len(idx) == 2
         np.testing.assert_allclose(np.array([0., 0.01]), dist_sq)
+
+    def test_StreamlineIntegrator__interp_vec_at_point(self):
+        """Tests that values are interpolated correctly."""
+
+        def gaussian(r, eps=1.0e-05):
+            return np.exp(-(r/eps)**2)
+
+        def interp(points, values, x, fn=gaussian, eps=1.0e-05):
+            r = np.linalg.norm(points - x, axis=1)
+            w = np.zeros(len(r))
+            w[r <= eps] = fn(r[r <= eps], eps=eps)
+            w /= w.sum()
+            return np.sum(values * w[:, np.newaxis], axis=0)
+
+        pos = np.array([
+            [0.5, 0.6, 0.5],
+            [0.5, 0.5, 0.6],
+            [0.5, 0.6, 0.6],
+            [0.4, 0.4, 0.4],
+            [0., 0., 0.],       # A point outside the interpolation range
+            [0., 1., 0.],       # "
+        ])
+
+        x, radius = np.array([0.5, 0.5, 0.5]), 0.3
+
+        n_points = len(pos)
+        arr1 = npr.random(n_points)
+        arr2 = npr.random(n_points)
+        arr3 = npr.random(n_points)
+
+        # Obtain ground truth interpolated value of vector
+        vec_data = np.column_stack((arr1, arr2, arr3))
+        interp_result_benchmark = interp(pos, vec_data, x, eps=radius)
+
+        # Perform interpolation with StreamlineIntegrator
+        streamline_integrator = StreamlineIntegrator(pos)
+        streamline_integrator.add_double_array('arr1', arr1)
+        streamline_integrator.add_double_array('arr2', arr2)
+        streamline_integrator.add_double_array('arr3', arr3)
+
+        streamline_integrator.set_vec_x('arr1')
+        streamline_integrator.set_vec_y('arr2')
+        streamline_integrator.set_vec_z('arr3')
+
+        streamline_integrator.set_interp_lscale(radius)
+        interp_result_sl = streamline_integrator._interp_vec_at_point(x)
+
+        np.testing.assert_allclose(interp_result_sl, interp_result_benchmark)
